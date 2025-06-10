@@ -1,0 +1,15 @@
+[
+  {
+    "Name": "Nuevo perfil",
+    "Projects": [
+      {
+        "Path": "..\\Api_Usuarios\\Api_Usuarios.csproj",
+        "Action": "Start"
+      },
+      {
+        "Path": "Front_Usuarios\\Front_Usuarios.csproj",
+        "Action": "Start"
+      }
+    ]
+  }
+]

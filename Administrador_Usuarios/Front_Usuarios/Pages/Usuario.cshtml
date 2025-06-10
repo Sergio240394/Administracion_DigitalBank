@@ -1,0 +1,148 @@
+﻿@page
+@inject IConfiguration Configuration
+@model UsuarioFullModel
+@{
+    ViewData["Title"] = "Gestión de Usuarios";
+}
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+<h2 class="mb-4">Gestión de Usuarios</h2>
+
+<form id="formUsuario" class="card p-4 shadow-sm">
+    <input type="hidden" asp-for="Usuario.Id" />
+
+    <div class="mb-3">
+        <label class="form-label">Nombre:</label>
+        <input asp-for="Usuario.Nombre" class="form-control" required minlength="2" maxlength="100" placeholder="Ingrese el nombre" />
+    </div>
+
+    <div class="mb-3">
+        <label class="form-label">Fecha de Nacimiento:</label>
+        <input asp-for="Usuario.FechaNacimiento" type="date" class="form-control" required />
+    </div>
+
+    <div class="mb-3">
+        <label class="form-label">Sexo:</label>
+        <select asp-for="Usuario.Sexo" class="form-select" required>
+            <option value="">Seleccione</option>
+            <option value="M">Masculino</option>
+            <option value="F">Femenino</option>
+        </select>
+    </div>
+
+    <div class="d-grid">
+        <button type="submit" class="btn btn-primary">Guardar</button>
+    </div>
+</form>
+
+
+            <h3 class="mb-4">Lista de Usuarios</h3>
+
+            <div class="table-responsive">
+                <table class="table table-striped table-bordered align-middle text-center">
+                    <thead class="table-dark">
+                        <tr>
+                            <th>Nombre</th>
+                            <th>Fecha Nacimiento</th>
+                            <th>Sexo</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tablaUsuarios">
+                        <!-- Las filas se agregan dinámicamente -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<hr />
+
+
+
+@section Scripts {
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script>
+        let editId = 0;
+
+        const apiBase = '@Configuration["ApiBase"]';
+
+        function cargarUsuarios() {
+            $.get(`${apiBase}/api/usuario`, function (data) {
+                let rows = "";
+                data.data.forEach(u => {
+                    rows += `<tr>
+                        <td>${u.nombre}</td>
+                        <td>${u.fechaNacimiento.split('T')[0]}</td>
+                        <td>${u.sexo}</td>
+                        <td>
+                            <button onclick="editar(${u.id})">Editar</button>
+                            <button onclick="eliminar(${u.id})">Eliminar</button>
+                        </td>
+                    </tr>`;
+                });
+                $("#tablaUsuarios").html(rows);
+            });
+        }
+
+        function editar(id) {
+            $.get(`${apiBase}/api/usuario/${id}`, function (response) {
+                const data = response.data;
+                editId = data.id;
+                $("input[name='Usuario.Nombre']").val(data.nombre);
+                $("input[name='Usuario.FechaNacimiento']").val(data.fechaNacimiento.split('T')[0]);
+                $("select[name='Usuario.Sexo']").val(data.sexo);
+            });
+        }
+
+        function eliminar(id) {
+            if (confirm("¿Está seguro de eliminar este usuario?")) {
+                $.ajax({
+                    url: `${apiBase}/api/usuario/${id}`,
+                    type: "DELETE",
+                    success: function () {
+                        cargarUsuarios();
+                    }
+                });
+            }
+        }
+
+        $("#formUsuario").submit(function (e) {
+            e.preventDefault();
+
+            const form = e.target;
+            if (!form.checkValidity()) {
+                form.reportValidity();
+                return;
+            }
+
+            let usuario = {
+                id: editId,
+                nombre: $("input[name='Usuario.Nombre']").val(),
+                fechaNacimiento: $("input[name='Usuario.FechaNacimiento']").val(),
+                sexo: $("select[name='Usuario.Sexo']").val()
+            };
+
+            const tipo = editId === 0 ? "POST" : "PUT";
+            const url = editId === 0 ? `${apiBase}/api/usuario` : `${apiBase}/api/usuario/${editId}`;
+
+            $.ajax({
+                url: url,
+                type: tipo,
+                contentType: "application/json",
+                data: JSON.stringify(usuario),
+                success: function () {
+                    $("#formUsuario")[0].reset();
+                    editId = 0;
+                    cargarUsuarios();
+                }
+            });
+        });
+
+        $(document).ready(function () {
+            cargarUsuarios();
+        });
+    </script>
+}
